@@ -1,8 +1,11 @@
-#### LOCAL APP
 #### LinkedIn User Prediction App
+#### Final Project
+#### OPIM 607 Programming II
+#### Dale Koch
+#### 12/13/2022
 
 
-#### Import Packages
+###### IMPORT PACKAGES ######
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -13,22 +16,27 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
 
-#### Add header to describe app
-st.markdown("# Programming II - Final Project")
-st.markdown("#### Dale Koch")
+###### HEADER ######
+st.set_page_config(page_title = "LinkedIn Predictor by Dale", layout = "centered")
 
+st.markdown("### LinkedIn User Prediction")
+st.markdown("###### Created by Dale Koch")
+st.markdown("---")
 
-#### Load Dataframe
+###### INSTRUCTIONS ######
+st.write("Enter values in the boxes below to predict whether someone with those characteristics is a LinkedIn user. You may use the Tab key and enter number values with your keyboard. Press enter to select a value before tabbing to the next box.")
+
+###### DATA & LOG REGRESSION ######
+
+## Load Dataframe
 s = pd.read_csv("social_media_usage.csv")
 
-
-#### Create transformation function
+## Create transformation function
 def clean_sm(x):
     y = np.where(x==1, 1, 0)
     return y
 
-
-#### Clean data
+## Clean data
 ss = pd.DataFrame({
     "income":np.where(s['income'] <= 9, s['income'], np.nan),
     "education":np.where(s['educ2'] <= 8, s['educ2'], np.nan),
@@ -39,21 +47,17 @@ ss = pd.DataFrame({
     "sm_li":clean_sm(s['web1h'])
 })
 
-
-#### Drop missing values
+## Drop missing values
 ss = ss.dropna()
 
-
-#### Convert float to int
+## Convert float to int
 ss = ss.astype({"income":"int", "education":"int", "age":"int"})
 
-
-#### Target (y) and feature(s) selection (X)
+## Target (y) and feature(s) selection (X)
 y = ss["sm_li"]
 X = ss[["income", "education", "parent", "married", "female", "age"]]
 
-
-#### Split data into training and test set
+## Split data into training and test set
 X_train, X_test, y_train, y_test = train_test_split(X,
                                                     y,
                                                     stratify=y,       # same number of target in training & test set
@@ -65,65 +69,98 @@ X_train, X_test, y_train, y_test = train_test_split(X,
 # y_train contains 80% of the the data and contains the target that we will predict using the features when training the model. 
 # y_test contains 20% of the data and contains the target we will predict when testing the model on unseen data to evaluate performance.
 
-
-#### Instantiate logistic regression model
+## Instantiate logistic regression model
 lr = LogisticRegression(class_weight='balanced')
 lr.fit(X_train, y_train)
 
-
-#### Apply the model to the test data (predictions)
+## Apply the model to the test data (predictions)
 y_pred = lr.predict(X_test)
 
 
-#### User inputs
+###### USER INPUT ######
 
-# #INCOME
-# income_slider = st.slider(label="Income Level", min_value=1, max_value=9)
+## Create dictionaries
+income_options = {
+    1: "1 - Less than $10,000",
+	2: "2 - $10,000 - $19,999",
+	3: "3 - $20,000 - $29,999",
+	4: "4 - $30,000 - $39,999",
+	5: "5 - $40,000 - $49,999",
+	6: "6 - $50,000 - $74,999",
+	7: "7 - $75,000 - $99,999",
+	8: "8 - $100,000 - $149,999",
+	9: "9 - $150,000 or more"
+}
 
-# #EDUCATION
-# education_slider = st.slider(label="Education Level", min_value=1, max_value=8)
+education_options = {
+    1: "1 - Less than high school (Up to grade 8)",
+	2: "2 - Some high school, no diploma",
+	3: "3 - High school graduate or GED",
+	4: "4 - Some college (no degree)",
+	5: "5 - Two-year associate degree",
+	6: "6 - Bachelor’s degree (e.g., BS, BA, AB)",
+	7: "7 - Some graduate school (no degree)",
+	8: "8 - Postgrad degree (e.g., MA, MS, PhD, MD, JD)",
+}
 
-# #PARENT
-# parent_toggle = st.slider(label="Parent", min_value=0, max_value=1, help="1=Parent, 0=Not a Parent")
+parent_options = {
+    0: "0 - No",
+    1: "1 - Yes"
+}
 
-# #MARRIED
-# married_toggle = st.slider(label="Married", min_value=0, max_value=1, help="1=Married, 0=Not Married")
+married_options = {
+    0: "0 - No",
+    1: "1 - Yes"
+}
 
-# #FEMALE
-# female_toggle = st.slider(label="Female", min_value=0, max_value=1, help="1=Female, 0=Not Female")
+female_options = {
+    0: "0 - No",
+    1: "1 - Yes"
+}
 
-# #AGE
-# age_toggle = st.slider(label="Age", min_value=1, max_value=98)
+## Input fields
+col1, col2 = st.columns(2)
 
-with st.sidebar:
-    income_sb = st.number_input("Income (low=1 to high=9)", 1, 9)
-    education_sb = st.number_input("Education (low=0 to high=8)", 0, 8)
-    parent_sb = st.number_input("Parent (0=no, 1=yes)", 0, 1)
-    married_sb = st.number_input("Married (0=no, 1=yes)", 0, 1)
-    female_sb = st.number_input("Female (0=no, 1=yes)", 0, 1)
-    age_sb = st.number_input("Age (1 to 98)", 0, 98)
+with col1:
+    income_value = st.selectbox(label = "Income range", options = (1, 2, 3, 4, 5, 6, 7, 8, 9), format_func = lambda x: income_options.get(x))
+    education_value = st.selectbox(label = "Education Level", options = (1, 2, 3, 4, 5, 6, 7, 8), format_func = lambda x: education_options.get(x))
+    parent_value = st.selectbox("Parent?", options = (0, 1), format_func = lambda x: parent_options.get(x))
 
-
-#### Prediction output
-person = [income_sb, education_sb, parent_sb, married_sb, female_sb, age_sb]
+with col2:
+    married_value = st.selectbox("Married?", options = (0, 1), format_func = lambda x: married_options.get(x))
+    female_value = st.selectbox("Female?", options = (0, 1), format_func = lambda x: female_options.get(x))
+    age_value = st.number_input("Age (1 to 98)", 0, 98)
 
 
-#### Predict class given input features
+###### MAKE PREDICTION ######
+
+## Store prediction indicator values as object
+person = [income_value, education_value, parent_value, married_value, female_value, age_value]
+
+## Store predicted class as object
 predicted_class = lr.predict([person])
 
-# Create label for predicted class
+### Create label for predicted class
 if predicted_class == 1:
-    pred_label = "LinkedIn User"
+    pred_label = "**LinkedIn User**"
 else:
-    pred_label = "Not a LinkedIn User"
+    pred_label = "**Not a LinkedIn User**"
 
-#### Probability of positive class (LinkedIn user = 1)
+## Probability of positive class (LinkedIn user = 1)
 probs = lr.predict_proba([person])
 
+#st.markdown("---")
 
-#### Print predicted class and probability
-# st.write(f"Predicted class: {predicted_class[0]}") # 0 = not a LinkedIn user, 1 = LinkedIn user
-# st.write(f"Probability that this person is a LinkedIn user: {probs[0][1]:.2f}")
 
-st.write("Predicted class: ", pred_label)
-st.write("Probability this person is a LinkedIn user: ", probs[0][1])
+###### OUTPUT ######
+
+## Store predition as string
+pred_disp = ("Predicted class: " + pred_label)
+
+## Output prediction & probability
+if predicted_class == 1:
+    st.success(pred_disp)
+else:
+    st.error(pred_disp)
+
+st.write("**Probability this person is a LinkedIn user:** ", probs[0][1])
